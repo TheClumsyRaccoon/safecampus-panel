@@ -3,6 +3,12 @@ import Link from 'next/link';
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+      <div className="absolute top-10 left-10">
+        <span className="rounded-xl bg-primary px-4 py-4 text-white font-mono shadow-md">
+          Panel SafeCampus v0.1
+        </span>
+      </div>
+
       <div className="text-center max-w-2xl mx-auto my-16">
         <h1 className="text-4xl font-bold tracking-tight text-textmain sm:text-6xl">
           Gestion des Articles
