@@ -2,14 +2,15 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
-      <div className="absolute top-10 left-10">
-        <span className="rounded-xl bg-primary px-4 py-4 text-white font-mono shadow-md">
-          Panel SafeCampus v0.1
-        </span>
-      </div>
+    <div className="flex min-h-screen flex-col items-center bg-background p-8">
+      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-5xl">
+        <div className="z-10 w-full items-center justify-between font-mono text-sm lg:flex">
+          <span className="fixed left-0 top-0 flex w-full justify-center pb-6 pt-8 bg-primary text-white lg:static lg:w-auto lg:rounded-xl lg:border lg:bg-primary lg:p-4">
+            Panel SafeCampus v0.1
+          </span>
+        </div>
 
-      <div className="text-center max-w-2xl mx-auto my-16">
+        <div className="text-center max-w-2xl mx-auto my-16">
         <h1 className="text-4xl font-bold tracking-tight text-textmain sm:text-6xl">
           Gestion des Articles
         </h1>
@@ -19,7 +20,7 @@ export default function Home() {
         
         <div className="mt-10 flex items-center justify-center gap-x-6">
           <Link 
-            href="/login" 
+            href="/auth/login" 
             className="rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
           >
             Accéder à l'espace auteur <span aria-hidden="true">→</span>
@@ -27,7 +28,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl w-full text-center md:text-left">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full text-center md:text-left">
         <FeatureCard 
           title="Temps Réel" 
           desc="Les articles publiés apparaissent instantanément sur l'application mobile."
@@ -40,8 +41,13 @@ export default function Home() {
           title="Multi-plateforme" 
           desc="Gérez votre contenu depuis n'importe quel navigateur web."
         />
-      </div>
-    </main>
+        </div>
+      </main>
+
+      <footer className="text-center text-sm text-textsecondary py-6">
+        Développé avec ❤️ pour la communauté. {new Date().getFullYear()} par TheClumsyRaccoon.
+      </footer>
+    </div>
   );
 }
 
