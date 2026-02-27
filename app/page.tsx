@@ -51,7 +51,12 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ title, desc }) {
+interface FeatureCardProps {
+  title: string;
+  desc: string;
+}
+
+function FeatureCard({ title, desc }: FeatureCardProps) {
   return (
     <div className="group rounded-lg px-5 py-4 transition-colors duration-500 hover:bg-primary hover:text-white border border-transparent hover:shadow-sm">
       <h2 className="mb-3 text-2xl font-semibold">
