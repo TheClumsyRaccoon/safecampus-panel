@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { FirebaseError } from "firebase/app";
+import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/app/components/AuthLayout";
 import Input from "@/app/components/Input";
@@ -21,11 +23,37 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+      const userData = userDoc.data();
+
+      if (userData?.role === 'pending') {
+        throw new Error("pending");
+      }
+
+      if (!userData || (userData.role !== 'author' && userData.role !== 'admin')) {
+        throw new Error("unauthorized");
+      }
+
       router.push("/dashboard");
-    } catch (err: any) {
-      if (err.code === 'auth/invalid-credential') {
-        setError("Email ou mot de passe incorrect.");
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        if (err.code === 'auth/invalid-credential') {
+          setError("Email ou mot de passe incorrect.");
+        } else {
+          setError("Une erreur est survenue lors de la connexion.");
+        }
+      } else if (err instanceof Error) {
+        if (err.message === "pending") {
+          setError("Votre compte est en attente de validation par un admin.");
+          await signOut(auth);
+        } else if (err.message === "unauthorized") {
+          setError("Accès refusé. Ce compte n'est pas un compte auteur.");
+          await signOut(auth);
+        } else {
+          setError("Une erreur est survenue lors de la connexion.");
+        }
       } else {
         setError("Une erreur est survenue lors de la connexion.");
       }
@@ -50,6 +78,7 @@ export default function LoginPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="admin@safecampus.com"
+          disabled={isSubmitting}
         />
         <Input
           id="password"
@@ -59,6 +88,7 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
           placeholder="••••••••"
+          disabled={isSubmitting}
         />
         <button
           type="submit"

@@ -2,8 +2,8 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center bg-background p-8">
-      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-5xl">
+    <div className="flex min-h-screen flex-col bg-background">
+      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-5xl mx-auto p-8">
         <div className="z-10 w-full items-center justify-between font-mono text-sm lg:flex">
           <span className="fixed left-0 top-0 flex w-full justify-center pb-6 pt-8 bg-primary text-white lg:static lg:w-auto lg:rounded-xl lg:border lg:bg-primary lg:p-4">
             Panel SafeCampus v0.1
@@ -44,7 +44,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="text-center text-sm text-textsecondary py-6">
+      <footer className="py-6 text-center text-sm text-textsecondary">
         Développé avec ❤️ pour la communauté. {new Date().getFullYear()} par TheClumsyRaccoon.
       </footer>
     </div>

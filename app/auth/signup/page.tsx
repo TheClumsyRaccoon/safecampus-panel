@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { FirebaseError } from "firebase/app";
+import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/app/components/AuthLayout";
 import Input from "@/app/components/Input";
@@ -28,13 +30,26 @@ export default function SignupPage() {
     setError("");
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
-    } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
-        setError("Cette adresse e-mail est déjà utilisée.");
-      } else if (err.code === 'auth/weak-password') {
-        setError("Le mot de passe doit contenir au moins 6 caractères.");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        role: "pending",
+        createdAt: serverTimestamp(),
+      });
+
+      await signOut(auth);
+      router.push("/auth/login");
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        if (err.code === 'auth/email-already-in-use') {
+          setError("Cette adresse e-mail est déjà utilisée.");
+        } else if (err.code === 'auth/weak-password') {
+          setError("Le mot de passe doit contenir au moins 6 caractères.");
+        } else {
+          setError("Une erreur est survenue lors de l'inscription.");
+        }
       } else {
         setError("Une erreur est survenue lors de l'inscription.");
       }
@@ -59,6 +74,7 @@ export default function SignupPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="admin@safecampus.com"
+          disabled={isSubmitting}
         />
         <Input
           id="password"
@@ -69,6 +85,7 @@ export default function SignupPage() {
           required
           placeholder="••••••••"
           minLength={6}
+          disabled={isSubmitting}
         />
         <Input
           id="confirmPassword"
@@ -79,6 +96,7 @@ export default function SignupPage() {
           required
           placeholder="••••••••"
           minLength={6}
+          disabled={isSubmitting}
         />
         <button
           type="submit"
