@@ -19,7 +19,7 @@ export default function AuthLayout({ children, title, subtitle, error }: AuthLay
           </div>
 
           <div className="rounded-xl border border-gray-100 bg-white p-8 shadow-lg">
-            <h2 className="mb-2 text-center text-3xl font-bold text-textmain">{title}</h2>
+            <h2 className="mb-2 text-center text-3xl font-bold text-textprimary">{title}</h2>
             {subtitle && (
               <p className="mb-6 text-center text-sm text-textsecondary">{subtitle}</p>
             )}

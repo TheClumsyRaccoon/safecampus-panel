@@ -17,7 +17,7 @@ export default function Input({ label, id, type = "text", ...props }: InputProps
       <input
         id={id}
         type={type}
-        className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-textmain transition-colors focus:border-primary focus:bg-white focus:outline-none"
+        className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-textprimary transition-colors focus:border-primary focus:bg-white focus:outline-none"
         {...props}
       />
     </div>

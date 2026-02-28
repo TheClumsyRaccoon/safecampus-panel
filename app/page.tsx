@@ -11,7 +11,7 @@ export default function Home() {
         </div>
 
         <div className="text-center max-w-2xl mx-auto my-16">
-        <h1 className="text-4xl font-bold tracking-tight text-textmain sm:text-6xl">
+        <h1 className="text-4xl font-bold tracking-tight text-textprimary sm:text-6xl">
           Gestion des Articles
         </h1>
         <p className="mt-6 text-lg leading-8">

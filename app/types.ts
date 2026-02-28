@@ -6,3 +6,12 @@ export interface UserProfile {
   role: 'author' | 'admin' | 'pending';
   createdAt: Timestamp; 
 }
+
+export interface Article {
+  id: string;
+  title: string;
+  subtitle?: string;
+  status: 'draft' | 'published';
+  createdAt: Timestamp;
+  authorId: string;
+}
