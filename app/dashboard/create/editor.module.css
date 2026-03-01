@@ -1,0 +1,5 @@
+.editor :global(.ce-block__content),
+.editor :global(.ce-toolbar__content) {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+}

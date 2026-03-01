@@ -11,7 +11,10 @@ export interface Article {
   id: string;
   title: string;
   subtitle?: string;
+  content: string;
+  imageUrl?: string;
   status: 'draft' | 'published';
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
   authorId: string;
 }

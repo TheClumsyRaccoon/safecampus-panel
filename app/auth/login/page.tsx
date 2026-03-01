@@ -43,6 +43,7 @@ export default function LoginPage() {
           setError("Email ou mot de passe incorrect.");
         } else {
           setError("Une erreur est survenue lors de la connexion.");
+          console.error(err);
         }
       } else if (err instanceof Error) {
         if (err.message === "pending") {
@@ -53,11 +54,12 @@ export default function LoginPage() {
           await signOut(auth);
         } else {
           setError("Une erreur est survenue lors de la connexion.");
+          console.error(err);
         }
       } else {
         setError("Une erreur est survenue lors de la connexion.");
+        console.error(err);
       }
-      console.error(err);
     } finally {
       setIsSubmitting(false);
     }

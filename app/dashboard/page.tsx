@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, orderBy, deleteDoc, doc, getDoc } from "firebase/firestore";
-import { signOut, onAuthStateChanged, User } from "firebase/auth";
+import { signOut, onAuthStateChanged, User, sendEmailVerification } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [verificationSent, setVerificationSent] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -24,6 +25,11 @@ export default function DashboardPage() {
         return;
       }
       setUser(currentUser);
+
+      if (!currentUser.emailVerified) {
+        setLoading(false);
+        return;
+      }
 
       try {
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
@@ -69,6 +75,18 @@ export default function DashboardPage() {
     router.push("/");
   };
 
+  const handleResendVerification = async () => {
+    if (user) {
+      try {
+        await sendEmailVerification(user);
+        setVerificationSent(true);
+      } catch (e) {
+        console.error("Erreur envoi email:", e);
+        alert("Erreur lors de l'envoi. Veuillez patienter quelques minutes avant de réessayer.");
+      }
+    }
+  };
+
   const handleDelete = async (articleId: string) => {
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) return;
     
@@ -85,13 +103,44 @@ export default function DashboardPage() {
   if (error) return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-red-100 max-w-md text-center">
-        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">⚠️</div>
         <h2 className="text-xl font-bold text-red-600 mb-2">Erreur d'accès</h2>
         <p className="text-textsecondary mb-6">{error}</p>
         <button onClick={() => window.location.reload()} className="px-6 py-2 bg-primary text-white rounded-xl font-semibold hover:opacity-90 transition-all">Réessayer</button>
       </div>
     </div>
   );
+
+  if (user && !user.emailVerified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 font-sans">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-yellow-100 max-w-md text-center">
+          <h2 className="text-xl font-bold text-textprimary mb-2">Vérifiez votre email</h2>
+          <p className="text-textsecondary mb-6">
+            Pour accéder au tableau de bord, vous devez valider votre adresse email <strong>{user.email}</strong>.
+          </p>
+          
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={handleResendVerification}
+              disabled={verificationSent}
+              className="w-full bg-primary text-white px-4 py-2 rounded-xl font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {verificationSent ? "Email envoyé !" : "Renvoyer l'email de validation"}
+            </button>
+            
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full bg-white border border-gray-200 text-textprimary px-4 py-2 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+            >
+              J'ai validé mon email
+            </button>
+
+            <button onClick={handleLogout} className="text-sm text-textsecondary hover:underline mt-2">Se déconnecter</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-8 pt-20 font-sans">
