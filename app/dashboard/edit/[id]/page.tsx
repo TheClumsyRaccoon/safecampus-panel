@@ -1,19 +1,24 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import Link from "next/link";
 import type EditorJS from '@editorjs/editorjs';
-import styles from '../../components/editor.module.css';
+import type { OutputData } from '@editorjs/editorjs';
+import styles from '../../../components/editor.module.css';
+import { Article } from "@/app/types";
 
-export default function CreateArticlePage() {
+export default function EditArticlePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: articleId } = use(params);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [initialData, setInitialData] = useState<OutputData | null>(null);
   const editorRef = useRef<EditorJS | null>(null);
   const router = useRouter();
 
@@ -39,6 +44,46 @@ export default function CreateArticlePage() {
   }, [router]);
 
   useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        const articleRef = doc(db, "articles", articleId);
+        const articleSnap = await getDoc(articleRef);
+
+        if (!articleSnap.exists()) {
+          alert("Article non trouvé.");
+          router.push("/dashboard");
+          return;
+        }
+
+        const articleData = articleSnap.data() as Article;
+        setTitle(articleData.title);
+        setSubtitle(articleData.subtitle || "");
+        setImageUrl(articleData.imageUrl || "");
+
+        let content = { blocks: [] };
+        if (articleData.content && typeof articleData.content === 'string') {
+          try {
+            content = JSON.parse(articleData.content);
+          } catch (e) {
+            console.error("Erreur parsing du contenu JSON:", e);
+          }
+        }
+        setInitialData(content);
+      } catch (error) {
+        console.error("Erreur de chargement de l'article:", error);
+        alert("Impossible de charger l'article.");
+        router.push("/dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [articleId, router]);
+
+  useEffect(() => {
+    if (loading || !initialData) return;
+
     const initEditor = async () => {
       const EditorJS = (await import('@editorjs/editorjs')).default;
       const Header = (await import('@editorjs/header')).default;
@@ -49,19 +94,10 @@ export default function CreateArticlePage() {
           holder: 'editorjs',
           placeholder: 'Commencez à rédiger votre contenu ici...',
           tools: {
-            header: {
-              class: Header as any,
-              config: {
-                placeholder: 'Titre de section',
-                levels: [2, 3, 4],
-                defaultLevel: 2
-              }
-            },
-            list: {
-              class: List as any,
-              inlineToolbar: true,
-            }
+            header: { class: Header as any, config: { placeholder: 'Titre de section', levels: [2, 3, 4], defaultLevel: 2 } },
+            list: { class: List as any, inlineToolbar: true },
           },
+          data: initialData,
         });
         editorRef.current = editor;
       }
@@ -75,7 +111,7 @@ export default function CreateArticlePage() {
         editorRef.current = null;
       }
     };
-  }, []);
+  }, [loading, initialData]);
 
   const handleSubmit = async (status: 'draft' | 'published') => {
     if (!title) {
@@ -83,17 +119,11 @@ export default function CreateArticlePage() {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
     try {
       const user = auth.currentUser;
-      if (!user) {
-        alert("Vous devez être connecté.");
-        return;
-      }
-
-      if (!editorRef.current) {
-        console.error("Editor is not initialized");
-        alert("L'éditeur n'est pas prêt. Veuillez patienter un instant.");
+      if (!user || !editorRef.current) {
+        alert("Erreur: utilisateur non connecté ou éditeur non prêt.");
         return;
       }
 
@@ -105,30 +135,34 @@ export default function CreateArticlePage() {
       }
 
       const contentString = JSON.stringify(outputData);
+      const articleRef = doc(db, "articles", articleId);
 
-      await addDoc(collection(db, "articles"), {
+      await updateDoc(articleRef, {
         title,
         subtitle,
         content: contentString,
         imageUrl,
         status,
-        authorId: user.uid,
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
 
+      router.refresh();
       router.push("/dashboard");
     } catch (error) {
-      console.error("Erreur création:", error);
+      console.error("Erreur de mise à jour:", error);
       if (error instanceof Error) {
         alert(`Erreur: ${error.message}`);
       } else {
-        alert("Une erreur est survenue lors de la création.");
+        alert("Une erreur est survenue lors de la mise à jour.");
       }
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">Chargement de l'article...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -141,28 +175,27 @@ export default function CreateArticlePage() {
             ← <span className="hidden md:inline">Retour</span>
           </Link>
           <div className="h-4 w-px bg-gray-300 hidden md:block"></div>
-          <span className="text-sm text-textsecondary hidden md:block">Nouvel article</span>
+          <span className="text-sm text-textsecondary hidden md:block">Modification de l'article</span>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => handleSubmit('draft')}
-            disabled={loading}
+            disabled={saving}
             className="px-4 py-2 text-sm font-medium text-textsecondary hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50"
           >
-            Brouillon
+            {saving ? "Sauvegarde..." : "Sauvegarder brouillon"}
           </button>
           <button
             onClick={() => handleSubmit('published')}
-            disabled={loading}
+            disabled={saving}
             className="px-5 py-2 bg-primary text-white rounded-full text-sm font-semibold hover:opacity-90 transition-all shadow-sm disabled:opacity-50"
           >
-            {loading ? "Publication..." : "Publier"}
+            {saving ? "Enregistrement..." : "Enregistrer"}
           </button>
         </div>
       </nav>
 
-      {/* Page d'ecriture */}
       <div className="max-w-7xl mx-auto mt-8 mb-20 px-4">
         <div className="bg-white min-h-[150vh] rounded-xl shadow-sm border border-gray-100 p-12 md:p-24">
           

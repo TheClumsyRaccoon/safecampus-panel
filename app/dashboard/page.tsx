@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs, orderBy, deleteDoc, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, getDoc } from "firebase/firestore";
 import { signOut, onAuthStateChanged, User, sendEmailVerification } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { auth, db } from "@/lib/firebase";
@@ -19,12 +19,19 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
+    let unsubscribeArticles: (() => void) | undefined;
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
         router.push("/auth/login");
         return;
       }
       setUser(currentUser);
+
+      if (unsubscribeArticles) {
+        unsubscribeArticles();
+        unsubscribeArticles = undefined;
+      }
 
       if (!currentUser.emailVerified) {
         setLoading(false);
@@ -42,13 +49,19 @@ export default function DashboardPage() {
           orderBy("createdAt", "desc")
         );
         
-        const querySnapshot = await getDocs(q);
-        const articlesData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Article[];
-        
-        setArticles(articlesData);
+        unsubscribeArticles = onSnapshot(q, (querySnapshot) => {
+          const articlesData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Article[];
+          setArticles(articlesData);
+          setLoading(false);
+        }, (error) => {
+          console.error("Erreur listener articles:", error);
+          setError("Erreur lors du chargement des articles en temps réel.");
+          setLoading(false);
+        });
+
       } catch (err) {
         console.error("Erreur chargement dashboard:", err);
         if (err instanceof FirebaseError) {
@@ -62,12 +75,14 @@ export default function DashboardPage() {
         } else {
           setError("Une erreur est survenue lors du chargement des données.");
         }
-      } finally {
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubscribeArticles) unsubscribeArticles();
+    };
   }, [router]);
 
   const handleLogout = async () => {
@@ -92,7 +107,6 @@ export default function DashboardPage() {
     
     try {
       await deleteDoc(doc(db, "articles", articleId));
-      setArticles(prev => prev.filter(a => a.id !== articleId));
     } catch (error) {
       console.error("Erreur suppression:", error);
       alert("Erreur lors de la suppression.");
@@ -217,6 +231,11 @@ export default function DashboardPage() {
                 </div>
                 
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                  <Link
+                    href={`/dashboard/edit/${article.id}`}
+                    className="text-textprimary hover:text-primary text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors">
+                    Modifier
+                  </Link>
                   <button 
                     onClick={() => handleDelete(article.id)}
                     className="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
