@@ -232,6 +232,12 @@ export default function DashboardPage() {
                 
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
                   <Link
+                    href={`/dashboard/preview/${article.id}`}
+                    className="text-textprimary hover:text-primary text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Voir
+                  </Link>
+                  <Link
                     href={`/dashboard/edit/${article.id}`}
                     className="text-textprimary hover:text-primary text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors">
                     Modifier

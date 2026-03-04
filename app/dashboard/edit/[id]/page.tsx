@@ -60,7 +60,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
         setSubtitle(articleData.subtitle || "");
         setImageUrl(articleData.imageUrl || "");
 
-        let content = { blocks: [] };
+        let content: OutputData = { blocks: [] };
         if (articleData.content && typeof articleData.content === 'string') {
           try {
             content = JSON.parse(articleData.content);
@@ -94,6 +94,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
           holder: 'editorjs',
           placeholder: 'Commencez à rédiger votre contenu ici...',
           tools: {
+            // Les plugins editor.js n'ont pas de types officiels
             header: { class: Header as any, config: { placeholder: 'Titre de section', levels: [2, 3, 4], defaultLevel: 2 } },
             list: { class: List as any, inlineToolbar: true },
           },

@@ -38,7 +38,6 @@ export default function AdminUsersPage() {
         
         if (userData?.role !== "admin") {
           setError("Accès refusé. Réservé aux admin.");
-          setLoading(false);
           return;
         }
 
