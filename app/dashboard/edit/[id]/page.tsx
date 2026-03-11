@@ -18,6 +18,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [initialData, setInitialData] = useState<OutputData | null>(null);
   const editorRef = useRef<EditorJS | null>(null);
   const router = useRouter();
@@ -88,6 +89,8 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
       const EditorJS = (await import('@editorjs/editorjs')).default;
       const Header = (await import('@editorjs/header')).default;
       const List = (await import('@editorjs/list')).default;
+      const Quote = (await import('@editorjs/quote')).default;
+      const Delimiter = (await import('@editorjs/delimiter')).default;
 
       if (!editorRef.current) {
         const editor = new EditorJS({
@@ -97,6 +100,15 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
             // Les plugins editor.js n'ont pas de types officiels
             header: { class: Header as any, config: { placeholder: 'Titre de section', levels: [2, 3, 4], defaultLevel: 2 } },
             list: { class: List as any, inlineToolbar: true },
+            quote: {
+              class: Quote as any,
+              inlineToolbar: true,
+              config: {
+                quotePlaceholder: 'Entrez une citation',
+                captionPlaceholder: 'Auteur de la citation',
+              },
+            },
+            delimiter: Delimiter as any,
           },
           data: initialData,
         });
@@ -116,22 +128,24 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
 
   const handleSubmit = async (status: 'draft' | 'published') => {
     if (!title) {
-      alert("Le titre est obligatoire.");
+      setError("Le titre est obligatoire.");
       return;
     }
 
     setSaving(true);
+    setError(null);
+
     try {
       const user = auth.currentUser;
       if (!user || !editorRef.current) {
-        alert("Erreur: utilisateur non connecté ou éditeur non prêt.");
+        setError("Erreur: utilisateur non connecté ou éditeur non prêt.");
         return;
       }
 
       const outputData = await editorRef.current.save();
       
       if (outputData.blocks.length === 0) {
-        alert("Le contenu ne peut pas être vide.");
+        setError("Le contenu ne peut pas être vide.");
         return;
       }
 
@@ -151,11 +165,9 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
       router.push("/dashboard");
     } catch (error) {
       console.error("Erreur de mise à jour:", error);
-      if (error instanceof Error) {
-        alert(`Erreur: ${error.message}`);
-      } else {
-        alert("Une erreur est survenue lors de la mise à jour.");
-      }
+      setError(
+        error instanceof Error ? error.message : "Une erreur est survenue lors de la mise à jour."
+      );
     } finally {
       setSaving(false);
     }
@@ -178,6 +190,12 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
           <div className="h-4 w-px bg-gray-300 hidden md:block"></div>
           <span className="text-sm text-textsecondary hidden md:block">Modification de l'article</span>
         </div>
+
+        {error && (
+          <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-1.5">
+            {error}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <button

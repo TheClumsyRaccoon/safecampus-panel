@@ -13,6 +13,8 @@
     "@editorjs/header": "^2.8.8",
     "@editorjs/image": "^2.10.3",
     "@editorjs/list": "^2.0.9",
+    "@editorjs/delimiter": "^1.4.0",
+    "@editorjs/quote": "^2.6.0",
     "firebase": "^12.9.0",
     "isomorphic-dompurify": "^2.30.0",
     "next": "16.1.6",
